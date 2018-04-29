@@ -54,12 +54,14 @@ def build_and_plot_graph(num_nodes: int, build_fn, probability: float=None):
     nx.draw(g, pos=position)
     labels = nx.draw_networkx_labels(g, pos=position)
     plt.savefig(str(figs_path / ("graph" + str(num_nodes) + "_p" + probability + ".png")))
-    plt.show()
+    # plt.show()
 
     degrees = node_degree_dist(g.adjacency_matrix)
 
-    h, edges = scipy.histogram(degrees, bins=10, normed=True)
+    h, edges = scipy.histogram(degrees, bins=50, normed=True)
     k = edges[:-1] + (edges[1] - edges[0]) / 2
+
+    plt.clf()
     plt.plot(k, h, label='hist')
 
     plt.title('P(k)')
@@ -71,8 +73,6 @@ def build_and_plot_graph(num_nodes: int, build_fn, probability: float=None):
 
     print("Images saved")
 
-
-# M-C algorytm Metropolis, E(t), p(k)
 
 # o zadanym rozkładzie p(k) ~ k^-3 np. metoda odwrotnej dystrybuanty
 
@@ -100,9 +100,43 @@ def inv_distr(graph: Graph):
                     graph.adjacency_matrix[neighbour, node] = 1
 
 
+# M-C algorytm Metropolis, E(t), p(k)
+def monte_carlo(graph: Graph, p: float=0.5, steps: int=100000):
+    theta = np.log(p / (1 - p))
+    E = []
+    e = 0
+
+    for step in range(steps):
+        edge = (np.random.randint(0, graph.num_nodes - 1), np.random.randint(0, graph.num_nodes - 1))
+        edge_rev = edge[1], edge[0]
+        if graph.adjacency_matrix[edge] == 0:
+            graph.add_edge(edge[0], edge[1])
+            graph.adjacency_matrix[edge] = 1
+            graph.adjacency_matrix[edge_rev] = 1
+            e += 1
+        else:
+            if np.random.random() < np.exp(-theta):
+                graph.remove_edge(edge[0], edge[1])
+                graph.adjacency_matrix[edge] = 0
+                graph.adjacency_matrix[edge_rev] = 0
+                e -= 1
+        E.append(e)
+
+    Path(GRAPHS_DIR).mkdir(exist_ok=True)
+    figs_path = Path(GRAPHS_DIR + "/" + str(monte_carlo.__name__))
+    figs_path.mkdir(exist_ok=True)
+    plt.plot(E)
+    plt.title('Liczba krawedzi')
+    plt.xlabel('t, (krok)')
+    plt.ylabel('E')
+    plt.savefig(str(figs_path / ("E(t)_" + str(graph.num_nodes) + "_p" + str(p) + ".png")))
+    # plt.show()
+
+
 if __name__ == '__main__':
 
-    build_and_plot_graph(100, classic, 0.1)
-    build_and_plot_graph(100, classic, 0.5)
-    build_and_plot_graph(100, classic, 0.7)
-    build_and_plot_graph(100, inv_distr)
+    # build_and_plot_graph(100, classic, 0.1)
+    # build_and_plot_graph(100, classic, 0.5)
+    # build_and_plot_graph(100, classic, 0.7)
+    # build_and_plot_graph(100, inv_distr)
+    build_and_plot_graph(100, monte_carlo, 0.1)
