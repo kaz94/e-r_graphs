@@ -4,6 +4,7 @@
 
 import random
 from pathlib import Path
+from typing import Callable
 
 import networkx as nx
 from matplotlib import pyplot as plt
@@ -40,7 +41,7 @@ def node_degree_dist(adj_matrix: np.array):
     return np.sum(adj_matrix, axis=1)
 
 
-def build_and_plot_graph(num_nodes: int, build_fn, probability: float=None):
+def build_and_plot_graph(num_nodes: int, build_fn: Callable, probability: float=None, bins=20):
 
     Path(GRAPHS_DIR).mkdir(exist_ok=True)
     figs_path = Path(GRAPHS_DIR + "/" + str(build_fn.__name__))
@@ -58,7 +59,7 @@ def build_and_plot_graph(num_nodes: int, build_fn, probability: float=None):
 
     degrees = node_degree_dist(g.adjacency_matrix)
 
-    h, edges = scipy.histogram(degrees, bins=50, normed=True)
+    h, edges = scipy.histogram(degrees, bins=bins, normed=True)
     k = edges[:-1] + (edges[1] - edges[0]) / 2
 
     plt.clf()
@@ -135,8 +136,10 @@ def monte_carlo(graph: Graph, p: float=0.5, steps: int=100000):
 
 if __name__ == '__main__':
 
-    # build_and_plot_graph(100, classic, 0.1)
-    # build_and_plot_graph(100, classic, 0.5)
-    # build_and_plot_graph(100, classic, 0.7)
-    # build_and_plot_graph(100, inv_distr)
-    build_and_plot_graph(100, monte_carlo, 0.1)
+    build_and_plot_graph(100, classic, 0.1, 10)
+    build_and_plot_graph(100, classic, 0.5, 10)
+    build_and_plot_graph(100, classic, 0.7, 10)
+    build_and_plot_graph(100, inv_distr)
+    build_and_plot_graph(100, monte_carlo, 0.1, 20)
+    build_and_plot_graph(100, monte_carlo, 0.5, 50)
+    build_and_plot_graph(100, monte_carlo, 0.7, 50)
